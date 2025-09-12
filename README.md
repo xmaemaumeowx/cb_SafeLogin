@@ -42,7 +42,8 @@ Copy .env.example to .env and fill in secrets for JWT, session, and OAuth provid
 ```
 npm run
 ```
-5. Try it out
+5. Try it out!!!
+   
 Open your browser and navigate to http://localhost:3000
 
 ## Folder Structure
