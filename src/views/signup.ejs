@@ -10,7 +10,7 @@
   <div class="container">
     <h2>Signup</h2>
     <div id="toast" class="toast"></div>
-    <form onsubmit="return validateForm()" action="/signup" method="POST">
+    <form onsubmit="return validateForm()" id="signupForm" action="/signup" method="POST">
       <div class="form-group">
         <input type="text" id="email" name="email" placeholder="Enter email" required>
       </div>  
@@ -22,6 +22,7 @@
     <img src="https://raw.githubusercontent.com/xmaemaumeowx/cb_hackathon/Maureen/assets/images/artistry.png" alt="Artistry Logo">
     <p id="error"></p>
   </div>
+  <script src="script.js"></script>
 </body>
 </html>
 
