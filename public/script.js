@@ -1,10 +1,24 @@
-// Handle login form
+// On page load, check for message in URL
+window.onload = () => {
+  const params = new URLSearchParams(window.location.search);
+  const message = params.get('message');
+
+  if (message) {
+    // Show toast with message
+    showToast(decodeURIComponent(message));
+    // Remove message parameter from URL
+    history.replaceState(null, '', window.location.pathname);
+  }
+};
+
+// Handle login form submission
 document.getElementById('loginForm').addEventListener('submit', function(e) {
   e.preventDefault();
-  const email = document.getElementById('email').value;
-  const password = document.getElementById('password').value;
 
-  fetch('/login', {
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value.trim();
+
+  fetch('http://localhost:3000/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password })
@@ -12,8 +26,8 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
   .then(res => res.json())
   .then(data => {
     showToast(data.message);
-    // Optional redirect
-    if (data.message === 'Login successful') {
+    if (data.message === 'Login successful!') {
+      // Optional redirect
       // window.location.href = "/dashboard";
     }
   })
@@ -23,21 +37,28 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
   });
 });
 
-// Handle signup form
+
+// Handle signup form submission
 document.getElementById('signupForm').addEventListener('submit', function(e) {
   e.preventDefault();
-  const email = document.getElementById('email').value;
-  const password = document.getElementById('password').value;
+
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value.trim();
 
   fetch('/signup', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password })
   })
-  .then(res => res.json()) // Assuming your server responds with JSON
+  .then(res => res.json())
   .then(data => {
-    showToast(data.message);
-    // You can clear form here or redirect
+    // Redirect to login with message via URL parameter
+    if (data.message === 'User successfully added. Please log in.') {
+      window.location.href = `/?message=${encodeURIComponent(data.message)}`;
+    } else {
+      // Show the message as toast if needed
+      showToast(data.message);
+    }
   })
   .catch(err => {
     showToast('An error occurred. Please try again.');
@@ -45,12 +66,42 @@ document.getElementById('signupForm').addEventListener('submit', function(e) {
   });
 });
 
-// Toast display function
+
+
+// Display toast message
 function showToast(message) {
+  console.log('Showing toast:', message);
   const toast = document.getElementById('toast');
   toast.textContent = message;
-  toast.classList.add('show');
+  toast.className = 'toast show';
+
   setTimeout(() => {
-    toast.classList.remove('show');
+    toast.className = 'toast';
   }, 3000);
+}
+
+// Validate form inputs before submitting
+function validateForm() {
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value.trim();
+
+  if (email === "" || password === "") {
+    showToast("Please enter your email and password!");
+    return false;
+  }
+
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailPattern.test(email)) {
+    showToast("Invalid email format!");
+    return false;
+  }
+
+  const strongPasswordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_\-+=\{}\[\]|\\:;"'<>,.?/]).{8,}$/;
+  if (!strongPasswordPattern.test(password)) {
+    showToast("Password must be at least 8 characters long, include uppercase, lowercase, number, and special character!");
+    return false;
+  }
+
+  // If all validations pass
+  return true; 
 }
