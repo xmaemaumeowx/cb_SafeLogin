@@ -18,7 +18,10 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
   const email = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value.trim();
 
+  fetch('/login', {
+
   fetch('http://localhost:3000/login', {
+
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password })
@@ -26,9 +29,17 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
   .then(res => res.json())
   .then(data => {
     showToast(data.message);
+
+
+    if (data.message === 'Login successful!') {
+      setTimeout(() => {
+        window.location.href = "/home";
+      }, 2000);
+
     if (data.message === 'Login successful!') {
       // Optional redirect
       // window.location.href = "/dashboard";
+
     }
   })
   .catch(err => {
@@ -36,7 +47,6 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
     console.error('Error:', err);
   });
 });
-
 
 // Handle signup form submission
 document.getElementById('signupForm').addEventListener('submit', function(e) {
@@ -53,11 +63,21 @@ document.getElementById('signupForm').addEventListener('submit', function(e) {
   .then(res => res.json())
   .then(data => {
     // Redirect to login with message via URL parameter
+
+    showToast(data.message);
+
+   if (data.message === 'User successfully added. Please log in.') {
+      // Delay redirect to let toast show
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 2000);
+
     if (data.message === 'User successfully added. Please log in.') {
       window.location.href = `/?message=${encodeURIComponent(data.message)}`;
     } else {
       // Show the message as toast if needed
       showToast(data.message);
+
     }
   })
   .catch(err => {
@@ -105,3 +125,4 @@ function validateForm() {
   // If all validations pass
   return true; 
 }
+
