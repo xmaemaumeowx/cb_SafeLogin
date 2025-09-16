@@ -23,4 +23,7 @@ const LoginSchema = new mongoose.Schema(
 const Login = mongoose.model('Login', LoginSchema);
 
 // Export the model
+
 module.exports = { Login };
+
+
