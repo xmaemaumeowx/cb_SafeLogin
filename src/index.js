@@ -6,8 +6,8 @@ const path = require('path');
 const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose');
 const config = require('./config');
-const session = require('express-session');
 
+const session = require('express-session');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -22,6 +22,7 @@ app.set('views', path.join(__dirname, '/views'));
 // Serve static files
 app.use(express.static("public"));
 
+
 app.use(session({
   secret: process.env.SESSION_SECRET || 'supersecretkey',
   resave: false,
@@ -32,6 +33,11 @@ app.use(session({
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
+	
+// Connect to MongoDB using environment variable
+mongoose.connect(process.env.MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
 })
 .then(() => {
   console.log('MongoDB connected');
@@ -51,6 +57,7 @@ app.get('/', (req, res) => {
 app.get('/signup', (req, res) => {
   res.render('signup');
 });
+
 app.get('/home', (req, res) => {
   res.render('home');
 });
@@ -78,7 +85,6 @@ app.post('/signup', async (req, res) => {
   }
 });
 
-
 // Login handler
 app.post('/login', async (req, res) => {
   const { email, password } = req.body;
@@ -99,15 +105,18 @@ app.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
+
   //Save email in session
   req.session.user = { email: user.email };
 
     res.json({ message: 'Login successful!' });
+    res.json({ message: 'Login successful' });
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 });
+
 
 //Pass the email to home page
 app.get('/home', (req, res) => {
@@ -134,3 +143,4 @@ app.get('/logout', (req, res) => {
     res.redirect('/');
   });
 });
+

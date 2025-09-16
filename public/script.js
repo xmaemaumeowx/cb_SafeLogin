@@ -19,6 +19,9 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
   const password = document.getElementById('password').value.trim();
 
   fetch('/login', {
+
+  fetch('http://localhost:3000/login', {
+
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password })
@@ -27,10 +30,16 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
   .then(data => {
     showToast(data.message);
 
+
     if (data.message === 'Login successful!') {
       setTimeout(() => {
         window.location.href = "/home";
       }, 2000);
+
+    if (data.message === 'Login successful!') {
+      // Optional redirect
+      // window.location.href = "/dashboard";
+
     }
   })
   .catch(err => {
@@ -54,6 +63,7 @@ document.getElementById('signupForm').addEventListener('submit', function(e) {
   .then(res => res.json())
   .then(data => {
     // Redirect to login with message via URL parameter
+
     showToast(data.message);
 
    if (data.message === 'User successfully added. Please log in.') {
@@ -61,6 +71,13 @@ document.getElementById('signupForm').addEventListener('submit', function(e) {
       setTimeout(() => {
         window.location.href = "/";
       }, 2000);
+
+    if (data.message === 'User successfully added. Please log in.') {
+      window.location.href = `/?message=${encodeURIComponent(data.message)}`;
+    } else {
+      // Show the message as toast if needed
+      showToast(data.message);
+
     }
   })
   .catch(err => {
