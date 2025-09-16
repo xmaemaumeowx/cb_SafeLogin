@@ -32,6 +32,44 @@ h2 {
     color: #262626;
 }
 
+h3 {
+    font-weight: 300;
+    font-size: 22px;
+    margin-bottom: 20px;
+    color: #262626;
+    background: linear-gradient(90deg, #ff7e5f, #feb47b, #6dd5ed, #2193b0);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text; 
+}
+
+.marquee-container {
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+}
+
+.marquee-text {
+    display: inline-block;
+    white-space: nowrap;
+    animation: marquee-left 8s linear infinite;
+    background: linear-gradient(90deg, #ff7e5f, #feb47b, #6dd5ed, #2193b0);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text; 
+    font-weight: 300;
+    font-size: 22px;
+}
+
+@keyframes marquee-left {
+    0% {
+        transform: translateX(100%);
+    }
+    100% {
+        transform: translateX(-100%);
+    }
+}
+
 input[type="text"], input[type="password"] {
     width: 100%;
     padding: 9px 0 7px 8px;
@@ -124,4 +162,4 @@ p {
     opacity: 1;
     pointer-events: auto;
     transform: translateY(0);
-
+}
