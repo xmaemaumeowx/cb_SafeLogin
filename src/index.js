@@ -1,16 +1,18 @@
 // Load environment variables
 require('dotenv').config();
-
 const express = require('express');
 const path = require('path');
 const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose');
 const session = require('express-session');
-const config = require('./config');
+
+// Import User model (adjust path if needed)
+const User = require('./models/user');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Google OAuth client
 const { OAuth2Client } = require('google-auth-library');
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -18,10 +20,8 @@ const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static("public"));
-
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, '/views'));
-
 app.use(session({
   secret: process.env.SESSION_SECRET || 'supersecretkey',
   resave: false,
@@ -35,7 +35,6 @@ mongoose.connect(process.env.MONGODB_URI, {
 })
 .then(() => {
   console.log('MongoDB connected');
-  // Start server after DB connection
   app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
   });
@@ -57,33 +56,35 @@ app.get('/home', (req, res) => {
 // Signup handler
 app.post('/signup', async (req, res) => {
   const { email, password } = req.body;
-  // Basic validation
-  if (!email || !password) {
-    return res.status(400).json({ message: 'Email and password are required' });
-  }
 
-  // Server-side password validation
+  // Validate required fields
+  if (!email || !password) {
+    return res.status(400).json({ message: 'Email and password are required', type: 'error' });
+  }
+  // Validate format and strength
   const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const strongPasswordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_\-+=\{}\[\]|\\:;"'<>,.?/]).{8,}$/;
   if (!emailPattern.test(email)) {
-    return res.status(400).json({ message: 'Invalid email format!' });
+    return res.status(400).json({ message: 'Invalid email format!', type: 'error' });
   }
   if (!strongPasswordPattern.test(password)) {
-    return res.status(400).json({ message: 'Password must be at least 8 characters long, include uppercase, lowercase, number, and special character!' });
+    return res.status(400).json({
+      message: 'Password must be at least 8 characters long, include uppercase, lowercase, number, and special character!',
+      type: 'error'
+    });
   }
-
   try {
-    const existingUser = await config.Login.findOne({ email });
+    const existingUser = await User.findOne({ username: email, provider: 'local' });
     if (existingUser) {
-      return res.status(400).json({ message: 'Email already in use' });
+      return res.status(400).json({ message: 'Email already in use', type: 'error' });
     }
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = new config.Login({ email, password: hashedPassword });
+    const newUser = new User({ username: email, password: hashedPassword, provider: 'local' });
     await newUser.save();
-    res.json({ message: 'User successfully added. Please log in.' });
+    res.json({ message: 'User successfully added. Please log in.', type: 'success' });
   } catch (err) {
     console.error('Signup error:', err);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', type: 'error' });
   }
 });
 
@@ -91,22 +92,22 @@ app.post('/signup', async (req, res) => {
 app.post('/login', async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
-    return res.status(400).json({ message: 'Email and password are required' });
+    return res.status(400).json({ message: 'Email and password are required', type: 'error' });
   }
   try {
-    const user = await config.Login.findOne({ email });
+    const user = await User.findOne({ username: email, provider: 'local' });
     if (!user) {
-      return res.status(400).json({ message: 'User not found' });
+      return res.status(400).json({ message: 'User not found', type: 'error' });
     }
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(400).json({ message: 'Invalid credentials' });
+      return res.status(400).json({ message: 'Invalid credentials', type: 'error' });
     }
-    req.session.user = { email: user.email };
-    res.json({ message: 'Login successful!' });
+    req.session.user = { email };
+    return res.json({ message: 'Login successful!', type: 'success' });
   } catch (err) {
     console.error('Login error:', err);
-    res.status(500).json({ message: 'Server error' });
+    return res.status(500).json({ message: 'Server error', type: 'error' });
   }
 });
 
@@ -125,16 +126,13 @@ app.get('/logout', (req, res) => {
   });
 });
 
-// Google OAuth routes
-const User = require('./models/user');
-
+// Google OAuth handler
 app.post('/api/auth/google', async (req, res) => {
   const { id_token } = req.body;
   if (!id_token) {
-    return res.status(400).json({ message: 'No ID token provided.' });
+    return res.status(400).json({ message: 'No ID token provided.', type: 'error' });
   }
   try {
-    // Verify the token
     const ticket = await client.verifyIdToken({
       idToken: id_token,
       audience: process.env.GOOGLE_CLIENT_ID,
@@ -142,16 +140,15 @@ app.post('/api/auth/google', async (req, res) => {
     const payload = ticket.getPayload();
     const email = payload.email;
 
-    // Find user by username (set to email for Google)
     let user = await User.findOne({ username: email, provider: 'google' });
     if (!user) {
-      user = new User({ username: email, provider: 'google' }); // No password field at all
+      user = new User({ username: email, provider: 'google' });
       await user.save();
     }
-    req.session.user = { email }; // Optionally, store username here if consistent elsewhere
-    res.json({ message: 'Login successful!' });
+    req.session.user = { email };
+    res.json({ message: 'Login successful!', type: 'success' });
   } catch (err) {
     console.error('Google Auth error:', err);
-    res.status(401).json({ message: 'Google authentication failed.' });
+    res.status(401).json({ message: 'Google authentication failed.', type: 'error' });
   }
 });
